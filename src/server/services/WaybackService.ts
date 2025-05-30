@@ -1,5 +1,13 @@
 import axios from 'axios';
-import { ContentSource, ContentType } from '@/types/game';
+import { config } from '../config';
+
+export interface ContentSource {
+  type: 'reddit' | 'facebook' | 'imgur';
+  url: string;
+  timestamp: string;
+  author: string;
+  content: string;
+}
 
 export class WaybackService {
   private readonly apiKey: string;
@@ -9,97 +17,102 @@ export class WaybackService {
     this.apiKey = apiKey;
   }
 
-  async fetchContent(type: ContentType, url: string): Promise<ContentSource> {
+  async fetchContent(url: string): Promise<ContentSource> {
     try {
       const response = await axios.get(this.baseUrl, {
         params: {
           url,
-          timestamp: this.getRandomTimestamp(),
-        },
-        headers: {
-          'Authorization': `LOW ${this.apiKey}`,
+          timestamp: '20100101', // Start from 2010
+          key: this.apiKey,
         },
       });
 
       const snapshot = response.data.archived_snapshots.closest;
       if (!snapshot || !snapshot.available) {
-        throw new Error('No archived snapshot available');
+        throw new Error('No snapshot available for this URL');
       }
 
-      // Fetch the actual content
-      const contentResponse = await axios.get(snapshot.url);
-      const content = this.parseContent(type, contentResponse.data);
-
-      return {
-        type,
-        id: this.generateId(url),
-        url: snapshot.url,
-        content: content.text,
-        author: content.author,
-        timestamp: snapshot.timestamp,
-      };
+      const content = await this.fetchSnapshotContent(snapshot.url);
+      return this.parseContent(url, content);
     } catch (error) {
-      console.error('Error fetching from Wayback Machine:', error);
+      console.error('Error fetching content from Wayback Machine:', error);
       throw error;
     }
   }
 
-  private getRandomTimestamp(): string {
-    // Get a random timestamp between 2010 and now
-    const start = new Date('2010-01-01').getTime();
-    const end = new Date().getTime();
-    const timestamp = new Date(start + Math.random() * (end - start));
-    return timestamp.toISOString().split('T')[0];
-  }
-
-  private generateId(url: string): string {
-    return Buffer.from(url).toString('base64');
-  }
-
-  private parseContent(type: ContentType, html: string): { text: string; author: string } {
-    // Basic parsing - in production, use proper HTML parsing libraries
-    switch (type) {
-      case 'reddit':
-        return this.parseRedditContent(html);
-      case 'facebook':
-        return this.parseFacebookContent(html);
-      case 'imgur':
-        return this.parseImgurContent(html);
-      default:
-        throw new Error(`Unsupported content type: ${type}`);
+  private async fetchSnapshotContent(url: string): Promise<string> {
+    try {
+      const response = await axios.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching snapshot content:', error);
+      throw error;
     }
   }
 
-  private parseRedditContent(html: string): { text: string; author: string } {
-    // Basic Reddit comment parsing
-    const authorMatch = html.match(/data-author="([^"]+)"/);
-    const contentMatch = html.match(/data-content="([^"]+)"/);
+  private parseContent(url: string, content: string): ContentSource {
+    if (url.includes('reddit.com')) {
+      return this.parseRedditContent(url, content);
+    } else if (url.includes('facebook.com')) {
+      return this.parseFacebookContent(url, content);
+    } else if (url.includes('imgur.com')) {
+      return this.parseImgurContent(url, content);
+    } else {
+      throw new Error('Unsupported content type');
+    }
+  }
+
+  private parseRedditContent(url: string, content: string): ContentSource {
+    // Extract author and content from Reddit HTML
+    const authorMatch = content.match(/data-author="([^"]+)"/);
+    const contentMatch = content.match(/data-content="([^"]+)"/);
+
+    if (!authorMatch || !contentMatch) {
+      throw new Error('Could not parse Reddit content');
+    }
 
     return {
-      author: authorMatch ? authorMatch[1] : 'unknown',
-      text: contentMatch ? contentMatch[1] : 'No content found',
+      type: 'reddit',
+      url,
+      timestamp: new Date().toISOString(),
+      author: authorMatch[1],
+      content: contentMatch[1],
     };
   }
 
-  private parseFacebookContent(html: string): { text: string; author: string } {
-    // Basic Facebook post parsing
-    const authorMatch = html.match(/data-author="([^"]+)"/);
-    const contentMatch = html.match(/data-content="([^"]+)"/);
+  private parseFacebookContent(url: string, content: string): ContentSource {
+    // Extract author and content from Facebook HTML
+    const authorMatch = content.match(/data-author="([^"]+)"/);
+    const contentMatch = content.match(/data-content="([^"]+)"/);
+
+    if (!authorMatch || !contentMatch) {
+      throw new Error('Could not parse Facebook content');
+    }
 
     return {
-      author: authorMatch ? authorMatch[1] : 'unknown',
-      text: contentMatch ? contentMatch[1] : 'No content found',
+      type: 'facebook',
+      url,
+      timestamp: new Date().toISOString(),
+      author: authorMatch[1],
+      content: contentMatch[1],
     };
   }
 
-  private parseImgurContent(html: string): { text: string; author: string } {
-    // Basic Imgur post parsing
-    const authorMatch = html.match(/data-author="([^"]+)"/);
-    const contentMatch = html.match(/data-content="([^"]+)"/);
+  private parseImgurContent(url: string, content: string): ContentSource {
+    // Extract author and content from Imgur HTML
+    const authorMatch = content.match(/data-author="([^"]+)"/);
+    const contentMatch = content.match(/data-content="([^"]+)"/);
+
+    if (!authorMatch || !contentMatch) {
+      throw new Error('Could not parse Imgur content');
+    }
 
     return {
-      author: authorMatch ? authorMatch[1] : 'unknown',
-      text: contentMatch ? contentMatch[1] : 'No content found',
+      type: 'imgur',
+      url,
+      timestamp: new Date().toISOString(),
+      author: authorMatch[1],
+      content: contentMatch[1],
     };
   }
 } 

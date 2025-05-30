@@ -78,6 +78,26 @@ async function setupDatabase() {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS commentators (
+        id VARCHAR(255) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        username VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        is_active BOOLEAN DEFAULT true,
+        invite_code VARCHAR(255) UNIQUE,
+        invite_expires_at TIMESTAMP WITH TIME ZONE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS commentator_sessions (
+        id UUID PRIMARY KEY,
+        commentator_id VARCHAR(255) REFERENCES commentators(id),
+        token VARCHAR(255) UNIQUE NOT NULL,
+        expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
     // Create indexes
@@ -88,6 +108,9 @@ async function setupDatabase() {
       CREATE INDEX IF NOT EXISTS idx_rounds_game_id ON rounds(game_id);
       CREATE INDEX IF NOT EXISTS idx_fake_answers_round_id ON fake_answers(round_id);
       CREATE INDEX IF NOT EXISTS idx_selections_round_id ON selections(round_id);
+      CREATE INDEX IF NOT EXISTS idx_commentators_username ON commentators(username);
+      CREATE INDEX IF NOT EXISTS idx_commentators_invite_code ON commentators(invite_code);
+      CREATE INDEX IF NOT EXISTS idx_commentator_sessions_token ON commentator_sessions(token);
     `);
 
     // Create functions
@@ -122,6 +145,11 @@ async function setupDatabase() {
 
       CREATE TRIGGER update_cohorts_updated_at
         BEFORE UPDATE ON cohorts
+        FOR EACH ROW
+        EXECUTE FUNCTION update_updated_at();
+
+      CREATE TRIGGER update_commentators_updated_at
+        BEFORE UPDATE ON commentators
         FOR EACH ROW
         EXECUTE FUNCTION update_updated_at();
     `);

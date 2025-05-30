@@ -23,10 +23,14 @@ export const config = {
     pingTimeout: 5000,
   },
   game: {
-    minAudienceSize: 5,
-    roundDuration: 30000,
-    cohortSize: 10,
+    minAudienceSize: 2,
+    roundDuration: 60000,
+    cohortSize: 5,
     maxFakeAnswers: 3,
   },
   waybackApiKey: process.env.WAYBACK_API_KEY || '',
+  jwt: {
+    secret: process.env.JWT_SECRET || 'your-secret-key',
+    expiresIn: '24h',
+  },
 }; 
