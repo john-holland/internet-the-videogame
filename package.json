@@ -1,0 +1,46 @@
+{
+  "name": "internet-the-videogame",
+  "version": "1.0.0",
+  "description": "A game where players compete against the internet by identifying real comments among manipulated content",
+  "main": "src/server/index.ts",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "jest",
+    "setup": "./scripts/setup.sh",
+    "start:dev": "./scripts/start.sh",
+    "db:setup": "ts-node src/server/db/setup.ts"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "ioredis": "^5.3.2",
+    "next": "14.1.0",
+    "pg": "^8.11.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.3.3",
+    "uuid": "^9.0.1",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.19",
+    "@types/pg": "^8.11.0",
+    "@types/react": "^18.2.57",
+    "@types/react-dom": "^18.2.19",
+    "@types/uuid": "^9.0.8",
+    "@types/ws": "^8.5.10",
+    "@typescript-eslint/eslint-plugin": "^7.0.2",
+    "@typescript-eslint/parser": "^7.0.2",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "14.1.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "ts-node": "^10.9.2"
+  }
+}
