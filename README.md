@@ -104,3 +104,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Internet Archive's Wayback Machine for providing historical web content
 - Next.js team for the amazing framework
 - OpenShift team for the container platform
+
+**Credits:**
+This project benefited from AI code assistance by [Cursor](https://www.cursor.com/).
